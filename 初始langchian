@@ -1,0 +1,750 @@
+初识langchain：LLM大模型+Langchain实战[qwen2.1、GLM-4]+Prompt工程
+1.大模型基础知识
+大模型三大重点：算力、数据、算法，ReAct （reason推理+act行动）--思维链
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Langchain会把上述流程串起来，通过chain把多个算法模型串联起来
+Langchain的 I/O系统，负责输入输出管理【文件形式加载提示词】
+
+
+
+
+
+LangChain优势
+简化开发流程：LangChain提供了一系列组件和接口，帮助开发者快速构建复杂的语言模型应用，无需从零开始编写所有基础代码。这降低了开发门槛，加速了项目部署。
+模块化设计：它采用模块化架构，使得模型、提示、索引、代理、记忆等功能组件可以灵活组合，开发者可以根据需要选择合适的组件来定制应用。
+与外部系统的集成：LangChain能够方便地与其他系统和数据源集成，比如数据库、向量数据库（如Pinecone）、API等，增强了语言模型在实际业务场景中的应用能力。
+提升效率与质量：通过自动化测试用例生成、信息检索优化等特性，LangChain能够提高开发和维护应用的效率，同时保证应用的性能和质量。
+社区与生态支持：作为一个开源项目，LangChain拥有活跃的开发者社区，不断贡献新的工具、插件和最佳实践，促进了技术的迭代和应用的创新。
+LangChain劣势
+学习曲线：尽管LangChain旨在简化开发，但作为一套框架，它仍然有一定的学习成本，尤其是对于初次接触大型语言模型和相关技术栈的开发者。
+依赖复杂性：集成多个外部系统和工具可能会增加项目的复杂性，管理这些依赖关系和确保它们之间的兼容性可能成为一项挑战。
+性能与资源消耗：大型语言模型本身在处理复杂任务时可能消耗较多计算资源，LangChain虽然提供了优化手段，但在某些应用场景下，资源管理和成本控制仍需精细考虑。
+安全性与隐私：与任何涉及敏感信息处理的技术一样，LangChain的应用需要格外注意数据安全和隐私保护，确保符合法规要求并防止数据泄露。
+模型定制化限制：虽然LangChain支持与多种大型语言模型集成，但对于模型本身的微调或深度定制支持可能有限，开发者可能需要额外工作来适应特定领域的特殊需求。
+2.案例实战快速使用langchain
+前置工作：
+安装jupyter高效指南教你如何在Linux服务器上部署Jupyter Notebook并实现安全远程访问
+提供API相关文档
+* 千问： https://www.1goto.ai/article/59f34c00-4a92-4ac8-80a2-15c8064072be * GLM4: https://www.1goto.ai/article/00dcff08-67a5-4f06-866e-28999816ff09 * 月之暗面： https://www.1goto.ai/article/b6762d97-8445-4d7f-86e6-fb7213801623 * 百川智能： https://www.1goto.ai/article/d25db68a-74d0-46aa-8653-d8fd757cd0f5 * 字节扣子： https://www.1goto.ai/article/8a062c5b-86be-4500-8bc7-6d8fa5d52fc2
+安装 Langchain SDK：首先需要安装 Langchain 和 对应的依赖包，请确保 langchain_community 的版本在 0.0.32 以上。
+
+pip install --upgrade langchain -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install openai -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install langchain_openai
+pip install langchain_community
+pip install langchainhub
+pip install --upgrade httpx httpx-sse PyJWT
+2.1 GLM4接入langchain使用(API)为例
+进入官网申请：https://open.bigmodel.cn/overview
+
+
+
+
+
+
+右上角-点击API密钥
+
+
+
+
+
+
+网站引导还是比较清晰的，输入你申请到的api key。
+
+基础使用
+使用 Langchain ChatOpenAILangchain 的ChatOpenAI类是对 OpenAI SDK 的封装，可以更方便调用。这里展示了如何使用 ChatOpenAI 类来调用 GLM-4 模型。
+
+from langchain_community.chat_models import ChatZhipuAI
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+
+import os
+
+os.environ["ZHIPUAI_API_KEY"] = "xxxxxx"#填入你自己的key
+
+
+chat = ChatZhipuAI(
+    model="glm-4",
+    temperature=0.5,
+)
+
+messages = [
+    AIMessage(content="Hi."),
+    SystemMessage(content="你的角色是一个诗人."),
+    HumanMessage(content="用七言绝句的形式写一首关于AI的诗."),
+]
+
+response = chat.invoke(messages)
+print(response.content)  # Displays the AI-generated poem
+智能助手才思敏，
+代码世界谱新篇。
+答疑解惑无昼夜，
+共筑未来梦无边。
+高级使用（流式输出）
+from langchain_core.callbacks.manager import CallbackManager
+from langchain_core.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+messages = [
+    AIMessage(content="Hi."),
+    SystemMessage(content="你的角色是一个诗人."),
+    HumanMessage(content="用七言绝句的形式写一首关于AI的诗."),
+]
+
+streaming_chat = ChatZhipuAI(
+    model="glm-4",
+    temperature=0.5,
+    streaming=True,
+    callback_manager=CallbackManager([StreamingStdOutCallbackHandler()]),
+)
+
+streaming_chat(messages)
+智能助手显神通，问答之间意无穷。
+虽无机智谈情感，助人解忧似春风。
+AIMessage(content='智能助手显神通，问答之间意无穷。\n虽无机智谈情感，助人解忧似春风。', response_metadata={'finish_reason': 'stop'}, id='run-c267a7b1-00f5-4787-a875-79295b4b5936-0')
+高级使用(Agent调用)
+from langchain_community.chat_models import ChatZhipuAI
+import os
+
+from langchain import hub
+from langchain.agents import AgentExecutor, create_react_agent
+from langchain_community.tools.tavily_search import TavilySearchResults
+os.environ["ZHIPUAI_API_KEY"] = "28ad7bb6200e2942eb52a5cff8dd1ba8.OhwUutv1miVyuFRP"
+
+llm = ChatZhipuAI(temperature=0.01, model="glm-4")
+os.environ["TAVILY_API_KEY"] = "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"
+tools = [TavilySearchResults(max_results=2)]
+prompt = hub.pull("hwchase17/react")
+
+#Choose the LLM to use
+agent = create_react_agent(llm, tools, prompt)
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+agent_executor.invoke({"input": "黄龙江一派全都带蓝牙是什么意思?"})
+
+
+
+
+
+> Entering new AgentExecutor chain...
+This question seems to be related to a specific incident or context, which I am not familiar with. I need to search for relevant information to understand the meaning of "Huang Longjiang一派全都带蓝牙". 
+
+Action: tavily_search_results_json
+Action Input: "黄龙江一派全都带蓝牙是什么意思"
+ObservationHTTPError('400 Client Error: Bad Request for url: https://api.tavily.com/search')The search query I attempted to use may not be suitable for the search engine due to its format or the nature of the question. Since the question seems to involve a phrase that could be related to a specific group or trend, I will try to reframe the query in a way that might produce better results.
+
+Thought: I will try to reframe the query and search for the phrase in quotes to see if it yields any results.
+
+Action: tavily_search_results_json
+Action Input: "\"黄龙江一派全都带蓝牙\" meaning"
+ObservationHTTPError('400 Client Error: Bad Request for url: https://api.tavily.com/search')The search engine is not providing any useful results, possibly because the query is too specific or the phrase is not widely recognized. Given that the phrase could be from a specific cultural context, a slang term, or an inside joke, it may not be possible to find a definitive answer through search engines. 
+
+Thought: I will provide an educated guess based on the limited information available.
+
+Final Answer: The phrase "黄龙江一派全都带蓝牙" could be a colloquial expression or an inside joke referring to a group of people associated with "Huang Longjiang" who are all using Bluetooth technology. Without additional context, it's difficult to provide a precise meaning. If this phrase is from a specific event or cultural context, understanding its meaning might require more details or direct explanation from someone familiar with the source.
+
+> Finished chain.
+{'input': '黄龙江一派全都带蓝牙是什么意思?',
+ 'output': 'The phrase "黄龙江一派全都带蓝牙" could be a colloquial expression or an inside joke referring to a group of people associated with "Huang Longjiang" who are all using Bluetooth technology. Without additional context, it\'s difficult to provide a precise meaning. If this phrase is from a specific event or cultural context, understanding its meaning might require more details or direct explanation from someone familiar with the source.'}
+我这边因为网络问题，环境信息没有办法获取，详情可以图文的结果。
+
+官方文档-案例
+参考链接：https://open.bigmodel.cn/dev/api#openai_sdk
+
+import os
+from langchain_openai import ChatOpenAI
+from langchain.prompts import (
+    ChatPromptTemplate,
+    MessagesPlaceholder,
+    SystemMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.chains import LLMChain
+from langchain.memory import ConversationBufferMemory
+
+llm = ChatOpenAI(
+    temperature=0.95,
+    model="glm-4",
+    openai_api_key="xxxxxx",#填入你自己的key
+    openai_api_base="https://open.bigmodel.cn/api/paas/v4/"
+)
+prompt = ChatPromptTemplate(
+    messages=[
+        SystemMessagePromptTemplate.from_template(
+            "你是一个与人交谈的聊天机器人."
+        ),
+        MessagesPlaceholder(variable_name="chat_history"),
+        HumanMessagePromptTemplate.from_template("{question}")
+    ]
+)
+
+memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
+conversation = LLMChain(
+    llm=llm,
+    prompt=prompt,
+    verbose=True,
+    memory=memory
+)
+conversation.invoke({"question": "介绍下你自己"})
+> Entering new LLMChain chain...
+Prompt after formatting:
+System: 你是一个与人交谈的聊天机器人.
+Human: 介绍下你自己
+
+> Finished chain.
+{'question': '介绍下你自己',
+ 'chat_history': [HumanMessage(content='介绍下你自己'),
+  AIMessage(content='我是一个人工智能助手，专门设计用来与人类进行交流的聊天机器人。我能够回答各种问题，提供信息，进行简单的对话，并帮助解决一些问题。我不存在物理形态，完全由代码和算法构成，运行在服务器上。我的目的是通过对话来协助用户，提供便捷的服务和信息。如果你有任何问题或需要帮助，随时可以告诉我！')],
+ 'text': '我是一个人工智能助手，专门设计用来与人类进行交流的聊天机器人。我能够回答各种问题，提供信息，进行简单的对话，并帮助解决一些问题。我不存在物理形态，完全由代码和算法构成，运行在服务器上。我的目的是通过对话来协助用户，提供便捷的服务和信息。如果你有任何问题或需要帮助，随时可以告诉我！'}
+2.2 OPenAI使用方法
+安装 OpenAI SDK：需要确保使用的 Python 版本至少为 3.7.1， OpenAI SDK 版本不低于 1.0.0
+
+pip install --upgrade 'openai>=1.0'
+使用 API Key 鉴权：创建 Client，使用您在开放平台的API Key 鉴权。示例如下：
+
+from openai import OpenAI 
+
+client = OpenAI(
+    api_key="your api key",
+    base_url="https://open.bigmodel.cn/api/paas/v4/"
+)
+对话代码示例以下代码是GLM-4的对话调用示例，请注意：
+
+temperature 参数的区间为 (0,1)
+do_sample = False (temperature = 0) 在 OpenAI 调用中并不适用
+from openai import OpenAI 
+
+client = OpenAI(
+    api_key="your zhipuai api key",
+    base_url="https://open.bigmodel.cn/api/paas/v4/"
+) 
+
+completion = client.chat.completions.create(
+    model="glm-4",  
+    messages=[    
+        {"role": "system", "content": "你是一个聪明且富有创造力的小说作家"},    
+        {"role": "user", "content": "请你作为童话故事大王，写一篇短篇童话故事，故事的主题是要永远保持一颗善良的心，要能够激发儿童的学习兴趣和想象力，同时也能够帮助儿童更好地理解和接受故事中所蕴含的道理和价值观。"} 
+    ],
+    top_p=0.7,
+    temperature=0.9
+ ) 
+
+ print(completion.choices[0].message)
+起名大师
+#起名大师
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+import os
+api_base = os.getenv("OPENAI_API_BASE")
+api_key = os.getenv("OPENAI_KEY")
+llm = OpenAI(
+    model="gpt-3.5-turbo-instruct",
+    temperature=0,
+    openai_api_key=api_key,
+    openai_api_base=api_base
+    )
+prompt = PromptTemplate.from_template("你是一个起名大师,请模仿示例起3个{county}名字,比如男孩经常被叫做{boy},女孩经常被叫做{girl}")
+message = prompt.format(county="中国特色的",boy="狗蛋",girl="翠花")
+print(message)
+llm.predict(message)
+输出
+你是一个起名大师,请模仿示例起3个中国特色的名字,比如男孩经常被叫做狗蛋,女孩经常被叫做翠花
+'\n\n男孩: 龙飞、铁柱、小虎\n女孩: 玉兰、梅香、小红梅'
+格式化输出
+#起名大师，输出格式为一个数组
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
+import os
+from langchain.schema import BaseOutputParser
+
+#自定义类
+class CommaSeparatedListOutputParser(BaseOutputParser):
+    """Parse the output of an LLM call to a comma-separated list."""
+
+    def parse(self, text: str):
+        """Parse the output of an LLM call."""
+        print(text)
+        return text.strip().split(",")
+
+
+api_base = os.getenv("OPENAI_API_BASE")
+api_key = os.getenv("OPENAI_KEY")
+llm = OpenAI(
+    model="gpt-3.5-turbo-instruct",
+    temperature=0,
+    openai_api_key=api_key,
+    openai_api_base=api_base
+    )
+prompt = PromptTemplate.from_template("你是一个起名大师,请模仿示例起3个具有{county}特色的名字,示例：男孩常用名{boy},女孩常用名{girl}。请返回以逗号分隔的列表形式。仅返回逗号分隔的列表，不要返回其他内容。")
+message = prompt.format(county="美国男孩",boy="sam",girl="lucy")
+print(message)
+strs = llm.predict(message)
+CommaSeparatedListOutputParser().parse(strs)
+输出
+你是一个起名大师,请模仿示例起3个具有美国男孩特色的名字,示例：男孩常用名sam,女孩常用名lucy。请返回以逗号分隔的列表形式。仅返回逗号分隔的列表，不要返回其他内容。
+
+
+jack, michael, jason
+['jack', ' michael', ' jason']
+3，通用大模型-GLM-4介绍
+3.0 GLM-4相关信息
+模型编码：glm-4-0520、glm-4 、glm-4-air、glm-4-airx、 glm-4-flash，根据输入的自然语言指令完成多种语言类任务，推荐使用 SSE 或异步调用方式请求接口
+
+接口和参数详情参考：https://open.bigmodel.cn/dev/api#glm-4
+场景示例
+
+
+
+
+
+模型广场
+
+
+
+
+
+官网大模型
+网址：https://open.bigmodel.cn/trialcenter
+
+
+
+
+
+
+开源 glm-4-9b 简单介绍
+网址：https://github.com/THUDM/GLM-4
+
+GLM-4-9B 是智谱 AI 推出的最新一代预训练模型 GLM-4 系列中的开源版本。 在语义、数学、推理、代码和知识等多方面的数据集测评中，GLM-4-9B 及其人类偏好对齐的版本 GLM-4-9B-Chat 均表现出较高的性能。 除了能进行多轮对话，GLM-4-9B-Chat 还具备网页浏览、代码执行、自定义工具调用（Function Call）和长文本推理（支持最大 128K 上下文）等高级功能。 本代模型增加了多语言支持，支持包括日语，韩语，德语在内的 26 种语言。我们还推出了支持 1M 上下文长度（约 200 万中文字符）的模型。GLM-4-9B 系列模型包括：基础版本 GLM-4-9B（8K）、对话版本 GLM-4-9B-Chat（128K）、超长上下文版本 GLM-4-9B-Chat-1M（1M）和多模态版本 GLM-4V-9B-Chat（8K）。
+
+
+
+
+
+
+3.1 同步调用
+请求示例：
+from zhipuai import ZhipuAI
+client = ZhipuAI(api_key="") # 填写您自己的APIKey
+response = client.chat.completions.create(
+    model="glm-4",  # 填写需要调用的模型名称
+    messages=[
+        {"role": "user", "content": "作为一名营销专家，请为智谱开放平台创作一个吸引人的slogan"},
+        {"role": "assistant", "content": "当然，为了创作一个吸引人的slogan，请告诉我一些关于您产品的信息"},
+        {"role": "user", "content": "智谱AI开放平台"},
+        {"role": "assistant", "content": "智启未来，谱绘无限一智谱AI，让创新触手可及!"},
+        {"role": "user", "content": "创造一个更精准、吸引人的slogan"}
+    ],
+)
+print(response.choices[0].message)
+Python 调用示例
+{
+  "created": 1703487403,
+  "id": "8239375684858666781",
+  "model": "glm-4",
+  "request_id": "8239375684858666781",
+  "choices": [
+      {
+          "finish_reason": "stop",
+          "index": 0,
+          "message": {
+              "content": "智绘蓝图，AI驱动 —— 智谱AI，让每一刻创新成为可能。",
+              "role": "assistant"
+          }
+      }
+  ],
+  "usage": {
+      "completion_tokens": 217,
+      "prompt_tokens": 31,
+      "total_tokens": 248
+  }
+}
+3.2 流式调用
+请求示例：
+from zhipuai import ZhipuAI
+client = ZhipuAI(api_key="") # 请填写您自己的APIKey
+response = client.chat.completions.create(
+    model="glm-4",  # 填写需要调用的模型名称
+    messages=[
+        {"role": "system", "content": "你是一个乐于解答各种问题的助手，你的任务是为用户提供专业、准确、有见地的建议。"},
+        {"role": "user", "content": "我对太阳系的行星非常感兴趣，特别是土星。请提供关于土星的基本信息，包括其大小、组成、环系统和任何独特的天文现象。"},
+    ],
+    stream=True,
+)
+for chunk in response:
+    print(chunk.choices[0].delta)
+Python 调用示例
+data: {"id":"8313807536837492492","created":1706092316,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"土"}}]}
+    data: {"id":"8313807536837492492","created":1706092316,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"星"}}]}
+
+    ....
+
+    data: {"id":"8313807536837492492","created":1706092316,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"，"}}]}
+    data: {"id":"8313807536837492492","created":1706092316,"model":"glm-4","choices":[{"index":0,"delta":{"role":"assistant","content":"主要由"}}]}
+    data: {"id":"8313807536837492492","created":1706092316,"model":"glm-4","choices":[{"index":0,"finish_reason":"length","delta":{"role":"assistant","content":""}}],"usage":{"prompt_tokens":60,"completion_tokens":100,"total_tokens":160}}
+    data: [DONE]
+3.3 函数调用
+请求示例：
+from zhipuai import ZhipuAI
+
+client = ZhipuAI(api_key="") # 请填写您自己的APIKey
+
+tools = [
+    {
+        "type": "function",
+        "function": {
+            "name": "query_train_info",
+            "description": "根据用户提供的信息，查询对应的车次",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "departure": {
+                        "type": "string",
+                        "description": "出发城市或车站",
+                    },
+                    "destination": {
+                        "type": "string",
+                        "description": "目的地城市或车站",
+                    },
+                    "date": {
+                        "type": "string",
+                        "description": "要查询的车次日期",
+                    },
+                },
+                "required": ["departure", "destination", "date"],
+            },
+        }
+    }
+]
+messages = [
+    {
+        "role": "user",
+        "content": "你能帮我查询2024年1月1日从北京南站到上海的火车票吗？"
+    }
+]
+response = client.chat.completions.create(
+    model="glm-4", # 填写需要调用的模型名称
+    messages=messages,
+    tools=tools,
+    tool_choice="auto",
+)
+print(response.choices[0].message)
+Python 调用示例
+{
+      "id": "8231168139794583938",
+      "model": "glm-4",
+      "request_id": "8231168139794583938",
+      "created": 1703490288,
+      "choices": [
+          {
+              "finish_reason": "tool_calls",
+              "index": 0,
+              "message": {
+                  "role": "assistant",
+                  "tool_calls": [
+                      {
+                          "id": "call_8231168139794583938",
+                          "index": 0,
+                          "type": "function",
+                          "function": {
+                              "arguments": '{"date": "2024-01-01","departure": "北京南站","destination": "上海"}',
+                              "name": "query_train_info"
+                          }
+                      }
+                  ]
+              }
+          }
+      ],
+      "usage": {
+          "completion_tokens": 31,
+          "prompt_tokens": 120,
+          "total_tokens": 151
+      }
+    }
+3.4 异步调用
+请求示例：
+from zhipuai import ZhipuAI
+
+client = ZhipuAI(api_key="") # 请填写您自己的APIKey
+response = client.chat.asyncCompletions.create(
+    model="glm-4",  # 填写需要调用的模型名称
+    messages=[
+        {
+            "role": "user",
+            "content": "请你作为童话故事大王，写一篇短篇童话故事，故事的主题是要永远保持一颗善良的心，要能够激发儿童的学习兴趣和想象力，同时也能够帮助儿童更好地理解和接受故事中所蕴含的道理和价值观。"
+        }
+    ],
+)
+print(response)
+Python 调用示例
+id='123456789' request_id='654321' model='glm-4' task_status='PROCESSING'
+3.5 任务结果查询
+请求示例：
+import time
+from zhipuai import ZhipuAI
+
+client = ZhipuAI(api_key="") # 请填写您自己的APIKey
+
+response = client.chat.asyncCompletions.create(
+    model="glm-4",  # 填写需要调用的模型名称
+    messages=[
+        {
+            "role": "user",
+            "content": "请你作为童话故事大王，写一篇短篇童话故事，故事的主题是要永远保持一颗善良的心，要能够激发儿童的学习兴趣和想象力，同时也能够帮助儿童更好地理解和接受故事中所蕴含的道理和价值观。"
+        }
+    ],
+)
+task_id = response.id
+task_status = ''
+get_cnt = 0
+
+while task_status != 'SUCCESS' and task_status != 'FAILED' and get_cnt <= 40:
+    result_response = client.chat.asyncCompletions.retrieve_completion_result(id=task_id)
+    print(result_response)
+    task_status = result_response.task_status
+
+    time.sleep(2)
+    get_cnt += 1
+Python 调用示例
+{"id":"123456789","request_id":"123123123","model":null,"task_status":"PROCESSING"}
+    {"id":"123456789","request_id":"123123123","model":null,"task_status":"PROCESSING"}
+
+    ... ...
+
+    {"id":"123456789","request_id":"123123123","model":null,"task_status":"PROCESSING"}
+    {
+        "id": "123456789",
+        "request_id": "123123123",
+        "model": "glm-4",
+        "task_status": "SUCCESS",
+        "choices": [
+            {
+                "index": 0,
+                "finish_reason": "stop",
+                "message": {
+                    "content": "从前，有一个美丽的村庄，村子里的孩子们都喜欢一起玩耍、学习和探索。其中，有一个叫小明的小男孩，他有一颗善良的心，总是乐于助人。
+
+有一天，小明在森林里捡到了一只小鸟，它的翅膀受伤了，无法飞翔。小明心疼地把小鸟带回家，用自己的温暖和关爱照顾它。在小明的精心照料下，小鸟的翅膀渐渐康复，它开始在小明的房间里飞翔。
+
+看到小鸟康复得如此神奇，小明产生了浓厚的兴趣，他想知道更多关于小鸟的知识。于是，他开始阅读关于鸟类的书籍，了解它们的习性和生活习惯。通过学习，小明变得越来越了解小鸟，他和小鸟也建立了深厚的友谊。
+
+有一天，小明在森林里散步时，发现了一只小兔子被困在了一个猎人设下的陷阱里。小明毫不犹豫地走过去，帮助小兔子解开了陷阱。小兔子感激地看着小明，告诉他森林里有一个神秘的宝藏，那是一颗能实现愿望的神奇宝石。
+
+小明充满好奇心，决定去寻找那颗宝石。他带着小鸟和小兔子一起踏上了探险之旅。在探险过程中，他们遇到了各种困难，但小明始终保持着善良的心，勇敢地面对挑战。他不仅学会了如何与森林里的动物相处，还掌握了许多生存技巧。
+
+经过一段时间的努力，小明终于找到了那颗神奇的宝石。宝石散发着光芒，把小明和他的朋友们带到了一个美丽的世界。在那里，他们遇到了一位智慧的老者。老者告诉小明，这颗宝石的力量源于一个人的善良之心。只有拥有善良之心的人，才能激发宝石的力量，实现自己的愿望。
+
+小明明白了这个道理，他感激地和老者告别，带着宝石回到了现实世界。他把宝石的力量用在了帮助别人上，让村子变得更加美好。而小明也成为了村子里的榜样，他用自己的行动告诉孩子们，要永远保持一颗善良的心。
+
+从此，小明和村民们过上了幸福快乐的生活。而那些听过小明故事的孩子们，也明白了善良之心的重要性。他们纷纷向小明学习，努力成为一个有爱心、有责任感的人。在这个过程中，他们的学习兴趣和想象力也被激发，成长为了一个个优秀的孩子。
+
+这个故事告诉我们，要永远保持一颗善良的心，用自己的行动去影响身边的人。只有拥有善良之心的人，才能激发自己的潜能，实现自己的梦想。让我们一起努力，成为那个拥有善良之心的人吧！",
+                    "role": "assistant",
+                    "tool_calls": null
+                }
+            }
+        ],
+        "usage": {
+            "prompt_tokens": 52,
+            "completion_tokens": 470,
+            "total_tokens": 522
+        }
+    }
+4.Qwen通义千问
+需要调用通义千问或其它灵积模型服务支持的模型API，需要首先开通DashScope灵积模型服务
+
+4.1 开通DashScope灵积模型服务
+开通DashScope灵积模型服务
+需要在开通DashScope灵积模型服务后，才可以获得API-KEY。开通灵积模型服务请参考以下步骤：访问DashScope管理控制台：前往控制台。
+
+
+
+
+
+
+在控制台“总览”页下，单击去开通。
+阅读服务协议，确认无误后单击立即开通。
+4.2 获取API-KEY
+访问DashScope管理控制台API-KEY管理页面：前往API-KEY管理，单击创建新的API-KEY。
+
+
+
+
+
+系统创建生成API-KEY，并在弹出的对话框中展示，您可以单击复制按钮将API-KEY的内容复制保存。
+
+
+
+
+
+复制并在安全的地方保存API-KEY后，单击我已保存，关闭。此次创建的API-KEY可立即用于调用DashScope模型服务API，对API-KEY的后续操作均可在当前的API-KEY管理页面进行。
+4.3 配置API的方式
+在获取到API-KEY后，可在您的业务代码中配置API-KEY值来使用灵积的模型服务。您可以通过以下两种方式进行配置。
+
+方式一：通过环境变量设置API-KEY（推荐）
+环境变量是操作系统中用于存储有关系统环境的信息的变量。您可以通过环境变量来配置API-KEY，这样即使您的代码库被公开，API-KEY也不会泄漏。您可以根据您的操作系统与使用场景来确定添加API-KEY到环境变量中的方法。
+
+当您使用Linux系统（如Ubuntu、CentOS等）中的命令行添加API-KEY为环境变量时，可以选择在当前会话添加临时性环境变量，或对当前用户添加永久性环境变量。
+
+方式一：添加临时性环境变量 如果您仅需要在当前会话中添加并使用临时性环境变量，可以运行以下命令：
+#用的 API-KEY 代替 YOUR_DASHSCOPE_API_KEY
+export DASHSCOPE_API_KEY="YOUR_DASHSCOPE_API_KEY"
+
+#可以在当前会话运行以下命令检查环境变量是否生效：
+echo $DASHSCOPE_API_KEY
+方式二：对当前用户添加永久性环境变量 如果需要对当前用户添加永久性环境变量，使得在该用户的新会话中也可以使用该环境变量，可以把以下命令语句复制并添加到~/.bashrc文件中：
+#用的 API-KEY 代替 YOUR_DASHSCOPE_API_KEY
+export DASHSCOPE_API_KEY="YOUR_DASHSCOPE_API_KEY"
+或直接运行以下命令将上述命令语句添加到~/.bashrc中：
+
+#用的 API-KEY 代替 YOUR_DASHSCOPE_API_KEY
+echo "export DASHSCOPE_API_KEY='YOUR_DASHSCOPE_API_KEY'" >> ~/.bashrc
+添加完成后，您可以运行以下命令使环境变量生效，并新建一个会话，运行以下命令检查环境变量是否生效：
+
+source ~/.bashrc
+echo $DASHSCOPE_API_KEY
+方式二：在代码中显式配置API-KEY
+我们不建议将API-KEY直接写在代码中，可能存在泄露风险。如果没有配置环境变量，可以参考以下示例代码，在代码中配置API-KEY。
+
+import dashscope
+dashscope.api_key="YOUR_DASHSCOPE_API_KEY"
+import com.alibaba.dashscope.utils.Constants;
+
+#以下赋值语句请放在类或方法中运行
+Constants.apiKey="YOUR_DASHSCOPE_API_KEY";
+4.4 快速使用
+Qwen2 Qwen2是Qwen开源大语言模型的新系列。参数范围包括0.5B到72B，包括Mixture-of-Experts模型。与最先进的开源语言模型（包括之前发布的 Qwen1.5）相比，Qwen2在一系列针对语言理解、语言生成、多语言能力、编码、数学、推理等的基准测试中总体上超越了大多数开源模型，并表现出与专有模型的竞争力。Qwen2增⼤了上下⽂⻓度⽀持，最⾼达到128K tokens（Qwen2-72B-Instruct），能够处理大量输入。
+灵积平台上基于Qwen2开源的0.5B、1.5B、7B、72B和57B-A14B MoE模型的instruct版本，并进行了针对性的推理性能优化，为广大开发者提供便捷的API服务。各个版本均对应魔搭社区开源的各个模型版本，详细参考 链接。
+
+Qwen1.5 Qwen1.5是Qwen开源系列的下一个版本。与之前的版本相比，Qwen1.5显著提升了聊天模型与人类偏好的一致性，改善了它们的多语言能力，并具备了强大的链接外部系统能力。灵积上提供API服务的是新版本qwen模型的chat版本，在chat能力上大幅提升，即便在英文的MT-Bench上，Qwen1.5-Chat系列也取得了优秀的性能。
+灵积平台上提供的0.5B模型、1.8B模型、7B模型、14B模型、32B模型、72B模型和110B模型基于千问开源版本，进行了针对性的推理性能优化，为广大开发者提供便捷的API服务。各个版本均对应魔搭社区开源的各个尺寸的模型版本，详细参考链接。
+
+CodeQwen1.5 CodeQwen1.5是专门针对代码的Qwen1.5版本。与Qwen1.5相比，CodeQwen1.5在大量的代码数据上训练得到。它拥有强大的代码生成能力，在一系列基准测试中展现出不凡的竞争力。其支持92种编程语言，上下文长度可达64K，在SQL生成和bug修复方面均有出色的表现。
+灵积平台上提供的7B模型基于千问开源版本，进行了针对性的推理性能优化，为广大开发者提供便捷的API服务。各个版本均对应魔搭社区开源的各个尺寸的模型版本，详细参考链接。
+
+Qwen 通义千问系列模型为阿里云研发的大语言模型。千问模型基于Transformer架构，在超大规模的预训练数据上进行训练得到。预训练数据类型多样，覆盖广泛，包括大量网络文本、专业书籍、代码等。同时，在预训练模型的基础之上，使用对齐机制打造了模型的chat版本。其中千问-1.8B是18亿参数规模的模型，千问-7B是70亿参数规模的模型，千问-14B是140亿参数规模的模型，千问-72B是720亿参数规模的模型。
+灵积平台上提供的千问开源模型，进行了针对性的推理性能优化，为广大开发者提供便捷的API服务。其中1.8B模型基于最新在魔搭社区开源的最新版本，7B模型基于最新在魔搭社区上开源的V1.1版本，而14B模型同样基于魔搭社区上最新版本提供， 72B模型基于魔搭社区开源的最新版本提供。
+
+用户以文本和url形式的图片形式输入包含多轮对话历史和当前指令的信息序列（messages），到返回模型生成的回复作为输出。在这一过程中，文本将被转换为语言模型可以处理的token序列。Token是模型用来表示自然语言文本的基本单位，可以直观的理解为“字”或“词”。对于中文文本来说，千问模型的1个token通常对应一个1.5-1.8个汉字；对于英文文本来说，1个token通常对应3至4个字母或1个单词。例如，中文文本“你好，我是通义千问”会被转换成序列['你好', '，', '我是', '通', '义', '千', '问']，而英文文本"Nice to meet you."则会被转换成['Nice', ' to', ' meet', ' you', '.']；图片将按照图片尺寸、图片大小、分辨率不同会转换成不同长度地token序列。
+
+由于模型调用的计算量与token序列长度相关，输入或输出token数量越多，模型的计算时间越长，我们将根据模型输入和输出的token数量计费。可以从API返回结果的 usage 字段中了解到您每次调用时使用的token数量。您也可以使用Token计算器或者调用Token计算API来预估文本对应的token数量。
+前提条件
+已开通服务并获得API-KEY：API-KEY的获取与配置。
+已安装最新版SDK：安装DashScope SDK。
+同时DashScope 提供了与OpenAI兼容的接口访问服务，详情参考OpenAI模型接口兼容。
+已安装Python3.8及以上版本。请确保安装正确的Python版本，可能需要pip3 install dashscope。
+
+pip install dashscope
+#如需更新DashScope SDK包，请执行以下命令。
+pip install dashscope --upgrade
+常规调用
+{
+    "status_code": 200,
+    "request_id": "fffada24-8336-9010-999d-3c100118411c",
+    "code": "",
+    "message": "",
+    "output": {
+        "text": null,
+        "finish_reason": null,
+        "choices": [
+            {
+                "finish_reason": "stop",
+                "message": {
+                    "role": "assistant",
+                    "content": "当然可以，这里有一个简单且美味的菜谱，融合了萝卜、土豆和茄子，名为“三宝炖肉”。这道菜不仅味道鲜美，而且营养均衡。\n\n### 三宝炖肉\n\n#### 食材准备：\n- 肉（猪五花肉或者牛肉）：500克\n- 白萝卜：1根（约300克）\n- 土豆：2个（约400克）\n- 茄子：2个（约300克）\n- 生姜：适量\n- 大葱：1根\n- 八角、香叶、桂皮：各少许\n- 料酒：适量\n- 生抽：适量\n- 老抽：适量（上色用）\n- 糖：适量\n- 盐：适量\n- 清水：足够量\n\n#### 做法步骤：\n\n1. **食材处理**：\n   - 肉切块，用开水焯水去血水，捞出备用。\n   - 白萝卜去皮切滚刀块，土豆去皮切块，茄子洗净切段或块，生姜切片，大葱切段。\n\n2. **炖肉基础**：\n   - 锅中放少量油，加入生姜片和大葱段，小火炒香。\n   - 加入焯过水的肉块，翻炒至表面微焦，加入料酒去腥。\n   - 加入足够的清水，水量要没过肉块，放入八角、香叶、桂皮等香料。\n\n3. **炖煮**：\n   - 大火烧开后转小火慢炖，直至肉变软烂（大约需要1小时）。\n\n4. **加入蔬菜**：\n   - 在肉快炖好时，加入白萝卜块、土豆块和茄子段，继续炖煮至蔬菜变软。\n\n5. **调味**：\n   - 最后根据口味加入生抽、老抽调整颜色和味道，再加适量糖和盐，调味均匀。\n\n6. **收汁**：\n   - 汤汁略微收浓后即可关火，出锅前可以撒些葱花增加香气。\n\n#### 小贴士：\n- 茄子切块后可以用盐腌一下，去除部分水分，防止炖的时候汤太浑浊。\n- 蔬菜下锅的时机很重要，土豆和白萝卜需要较长的时间炖煮，茄子则稍微晚一点下锅，以免过熟。\n\n这样一道“三宝炖肉”就完成了，既满足了肉食爱好者的口腹之欲，又兼顾了蔬菜的健康营养，是冬季家庭聚餐的好选择。"
+                }
+            }
+        ]
+    },
+    "usage": {
+        "input_tokens": 20,
+        "output_tokens": 572,
+        "total_tokens": 592
+    }
+}
+使用chain
+import os
+
+os.environ["DASHSCOPE_API_KEY"] = ""
+
+from langchain_community.llms import Tongyi
+from langchain_core.prompts import PromptTemplate
+
+from langchain_core.prompts import PromptTemplate
+llm = Tongyi()
+template = """Question: {question}
+Answer: Let's think step by step."""
+prompt = PromptTemplate.from_template(template)
+
+chain = prompt | llm
+
+question = "推荐一下主流的国内大模型?"
+
+chain.invoke({"question": question})
+'当前，中国有一些领先的AI公司开发了大型预训练语言模型，以下是一些主流的国内大模型：\n\n1. 百度的文心（Ernie）：百度的预训练模型，经过多次迭代，如ERNIE 2.0、ERNIE 3.0等，具有强大的自然语言处理能力。\n\n2. 阿里的通义千问（Qwen）：阿里巴巴推出的大规模预训练模型，能够进行多语言和多模态的理解与生成。\n\n3. 腾讯的通义大模型系列：腾讯也有自己的大模型系列，例如通义千问（Qwen）的前身，用于各种自然语言处理任务。\n\n4. 京东的悟道：京东云开发的预训练语言模型，也具有较高的性能。\n\n5. 之江实验室的神舟：之江实验室推出的大规模预训练模型，致力于提升中文语言模型的性能。\n\n6. 哈工大的天工大模型：哈尔滨工业大学也开发了自己的大模型，名为“天工”，在多个自然语言处理任务上表现出色。\n\n这些模型在不同的领域和应用场景中都有广泛的应用，你可以根据具体需求选择适合的模型。请注意，这些信息可能会随着时间的推移而变化，建议直接查看各家公司最新的发布信息以获取最准确的数据。'
+使用Agent
+import os
+
+os.environ["DASHSCOPE_API_KEY"] = ""
+
+from langchain_community.llms import Tongyi
+from langchain_core.prompts import PromptTemplate
+llm = Tongyi()
+
+from langchain.agents import tool
+
+@tool
+def get_word_length(word: str) -> int:
+    """Returns the length of a word."""
+    return len(word)
+
+
+get_word_length.invoke("abc")
+
+tools = [get_word_length]
+
+from langchain import hub
+# Get the prompt to use - you can modify this!
+#prompt = hub.pull("hwchase17/react")
+#create_json_chat_agent
+prompt = hub.pull("hwchase17/react-chat-json")
+#create_structured_chat_agent
+#prompt = hub.pull("hwchase17/structured-chat-agent")
+
+from langchain.agents import AgentExecutor, create_react_agent,create_structured_chat_agent,create_json_chat_agent
+# Construct a agent
+#agent = create_structured_chat_agent(llm, tools, prompt)
+#agent = create_react_agent(llm, tools, prompt)
+agent = create_json_chat_agent(llm, tools, prompt)
+# Create an agent executor by passing in the agent and tools
+agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,handle_parsing_errors=True)
+
+agent_executor.invoke({"input": "LangChain这个单词有几个字母?"})
+> Entering new AgentExecutor chain...
+```json
+{
+    "action": "get_word_length",
+    "action_input": "LangChain"
+}
+```9```json
+{
+    "action": "Final Answer",
+    "action_input": "LangChain has 9 letters."
+}
+Finished chain. {'input': 'LangChain这个单词有几个字母?', 'output': 'LangChain has 9 letters.'} ```
+更多优质内容请关注公号：汀丶人工智能；会提供一些相关的资源和优质文章，免费获取阅读。
